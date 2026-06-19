@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+## Description: Active le plugin Figma (MCP remote design→code + skills) dans Claude Code
+## Usage: claude-figma
+## Example: "ddev claude-figma"
+
+#ddev-generated
+
+# Commande OPTIONNELLE, à lancer une fois par projet où tu veux Figma.
+# Active le plugin officiel `figma@claude-plugins-official` en écrivant dans
+# ~/.claude/settings.json (volume persistant). L'authentification OAuth Figma
+# se fait ENSUITE, au premier `ddev claude` qui utilise Figma (cf. message final).
+
+set -eu
+
+SETTINGS="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json"
+PLUGIN="figma@claude-plugins-official"
+
+mkdir -p "$(dirname "$SETTINGS")"
+[ -f "$SETTINGS" ] || echo '{}' > "$SETTINGS"
+
+# Déjà activé ? (idempotence)
+if jq -e --arg p "$PLUGIN" '.enabledPlugins[$p] == true' "$SETTINGS" >/dev/null 2>&1; then
+  echo "✓ Plugin Figma déjà activé."
+else
+  # Merge non destructif : on ajoute enabledPlugins[figma]=true et on déclare le
+  # marketplace officiel (extraKnownMarketplaces) — nécessaire sous Windows où il
+  # n'est pas pré-enregistré, inoffensif sur Linux/macOS.
+  tmp="$(mktemp)"
+  jq --arg p "$PLUGIN" '
+    .enabledPlugins = ((.enabledPlugins // {}) + { ($p): true })
+    | .extraKnownMarketplaces = ((.extraKnownMarketplaces // {}) + {
+        "claude-plugins-official": {
+          "source": { "source": "github", "repo": "anthropics/claude-plugins-official" }
+        }
+      })
+  ' "$SETTINGS" > "$tmp" && mv "$tmp" "$SETTINGS"
+  echo "✓ Plugin Figma activé dans $SETTINGS"
+fi
+
+cat <<'MSG'
+
+Prochaines étapes :
+  1. Lance:  ddev claude
+  2. Dans la TUI, tape  /mcp  : Claude Code détectera le serveur Figma non
+     authentifié et ouvrira le flux OAuth (ou affichera une URL à coller dans
+     ton navigateur ; si la redirection échoue, colle l'URL de callback dans
+     l'invite de Claude Code).
+  3. Une fois autorisé, le token persiste dans le volume (~/.claude) : à ne
+     faire qu'une fois.
+
+Usage (lecture seule design→code) : copie le lien d'une frame dans Figma
+(clic droit → "copy link to selection") et colle-le dans ton prompt.
+MSG

@@ -9,12 +9,16 @@ project_files:
   - claude/Dockerfile.claude
   - claude/scripts/rtk-init
   - commands/claude/claude
+  - commands/claude/claude-figma
 
 # Pas de global_files : tout est par projet (service, volume, commandes).
 
 post_install_actions:
   - |
-    #ddev-description:
+    #ddev-description: Rendre les commandes exécutables
+    chmod +x commands/claude/claude commands/claude/claude-figma
+  - |
+    #ddev-description: Message de prise en main
     echo ""
     echo "✅ Add-on 'claude' installé."
     echo "   1) ddev restart   # construit l'image, démarre le service, câble RTK"

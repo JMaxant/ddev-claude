@@ -28,6 +28,7 @@ RUN apt-get update \
        ripgrep \
        less \
        sudo \
+       jq \
   && rm -rf /var/lib/apt/lists/*
 
 # RTK (Rust Token Killer) -- binaire pre-compile via le script d'install officiel.
