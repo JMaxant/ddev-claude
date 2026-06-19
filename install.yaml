@@ -7,7 +7,7 @@ project_files:
   - docker-compose.claude.yaml
   - config.claude.yaml
   - claude/Dockerfile.claude
-  - claude/scripts/rtk-init
+  - claude/scripts/rtk-init.sh
   - commands/claude/claude
   - commands/claude/claude-figma
 
