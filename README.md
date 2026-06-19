@@ -80,6 +80,9 @@ automatiquement les sorties des commandes Bash de l'agent. Vérifier les gains :
 ddev exec -s claude rtk gain
 ```
 
+> ⚠️ Le binaire est installé depuis `rtk-ai/rtk` (le bon projet). On évite
+> volontairement `cargo install rtk` à cause d'une collision de nom sur crates.io.
+
 ## GSD (Git. Ship. Done.)
 
 Installé **par projet** via l'installateur officiel (`npx @opengsd/gsd-core@latest`),
@@ -99,3 +102,8 @@ docker volume rm ddev-<projet>-claude-config
 
 - **`ddev claude` dit "aucune authentification"** → lance `ddev claude-init`.
 - **Service absent** → `ddev restart`, puis `ddev describe`.
+- **Windows** : l'interactivité de `docker exec -it` (collage du code OAuth) est
+  la plus fiable sous WSL2 ou Git Bash. En PowerShell natif, certains terminaux
+  gèrent mal le `-it` ; privilégie WSL2.
+- **RTK entre en conflit avec un skill** → bypasse ponctuellement via `rtk proxy`
+  ou ajoute la commande aux exceptions du hook.

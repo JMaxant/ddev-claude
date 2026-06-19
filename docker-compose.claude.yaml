@@ -1,9 +1,13 @@
 # ddev-generated
-# Service dédié "claude" : conteneur outil sans routage HTTP.
-# - Monte le code projet (même chemin que le conteneur web : /var/www/html).
-# - Persiste ~/.claude (auth OAuth, agents/skills perso, hook RTK) dans un
-#   volume nommé PAR PROJET. Le volume survit aux `ddev restart/stop`, et est
-#   nettoyé par DDEV au `ddev delete`.
+# Service dedie "claude" : conteneur outil sans routage HTTP.
+# - L'image embarque un utilisateur dont l'UID/GID = celui de l'hote, injecte
+#   au build via les args USER_UID/USER_GID (DDEV expose DDEV_UID/DDEV_GID).
+#   Pas besoin de `user:` ni de `group_add` au runtime : l'utilisateur est deja
+#   le bon par construction.
+# - Monte le code projet (meme chemin que le conteneur web : /var/www/html).
+#   NB : un service custom ne recoit PAS ce mount automatiquement -> declare ici.
+# - Persiste ~/.claude (auth OAuth, hook RTK, settings perso) dans un volume
+#   nomme PAR PROJET (survit aux restart/stop ; nettoye au `ddev delete`).
 
 services:
   claude:
@@ -11,20 +15,22 @@ services:
     image: ddev-${DDEV_SITENAME}-claude
     build:
       context: claude
-      dockerfile: Dockerfile
-    # Conteneur outil : reste vivant, on exec dedans à la demande.
+      dockerfile: Dockerfile.claude
+      args:
+        USERNAME: claude
+        USER_UID: ${DDEV_UID:-1000}
+        USER_GID: ${DDEV_GID:-1000}
     command: ["tail", "-f", "/dev/null"]
-    # Aligne l'utilisateur du conteneur sur l'UID/GID hôte fournis par DDEV,
-    # pour que les fichiers écrits (credentials 0600, sorties RTK) restent lisibles.
-    user: "$DDEV_UID:$DDEV_GID"
+    restart: "no"
     environment:
       - HOME=/home/claude
-      # Optionnel : si un .ddev/.env.claude définit ANTHROPIC_API_KEY, DDEV
-      # l'injecte automatiquement (voir README). OAuth reste la voie par défaut.
+      # Si .ddev/.env.claude definit ANTHROPIC_API_KEY, DDEV l'injecte ici
+      # automatiquement (alternative a OAuth ; cf. README).
     volumes:
-      # Persistance de la config/auth Claude Code, par projet.
+      # Code projet : meme bind-mount que le conteneur web.
+      - "../:/var/www/html"
+      # Persistance config/auth Claude Code, par projet.
       - "claude-config:/home/claude/.claude"
-      # Labels DDEV obligatoires pour que le service soit géré comme partie du projet.
     labels:
       com.ddev.site-name: ${DDEV_SITENAME}
       com.ddev.approot: $DDEV_APPROOT
