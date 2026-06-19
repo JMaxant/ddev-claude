@@ -7,7 +7,7 @@ project_files:
   - docker-compose.claude.yaml
   - config.claude.yaml
   - claude/Dockerfile.claude
-  - claude/scripts/rtk-autoinit.sh
+  - claude/scripts/rtk-init.sh
   - commands/claude/claude
 
 # Pas de global_files : tout est par projet (service, volume, commandes).
