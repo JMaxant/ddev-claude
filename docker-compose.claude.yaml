@@ -14,7 +14,7 @@ services:
     container_name: ddev-${DDEV_SITENAME}-claude
     build:
       context: claude
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.claude
       args:
         USERNAME: claude
         USER_UID: ${DDEV_UID:-1000}
