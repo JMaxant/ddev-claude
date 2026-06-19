@@ -1,0 +1,5 @@
+#ddev-generated
+hooks:
+  post-start:
+    - exec: bash /mnt/ddev_config/claude/scripts/rtk-autoinit.sh
+      service: claude

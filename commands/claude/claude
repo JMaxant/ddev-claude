@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+## Description: Lance Claude Code dans le conteneur dédié (RTK câblé automatiquement)
+## Usage: claude [flags...]
+## Example: "ddev claude" ou "ddev claude --help"
+
+#ddev-generated
+
+# Commande exécutée DANS le service `claude` : DDEV gère le docker exec, le TTY
+# interactif et le working directory (/var/www/html par défaut). On se contente
+# de lancer claude en lui passant les arguments.
+
+# Prévient si pas encore authentifié (la TUI proposera /login de toute façon).
+if [ ! -f /home/claude/.claude/.credentials.json ]; then
+  echo "ℹ️  Pas encore authentifié : dans la TUI, tape /login (OAuth)." >&2
+  echo "    Le credential sera persistant (volume), à ne faire qu'une fois." >&2
+  echo "" >&2
+fi
+
+exec claude "$@"

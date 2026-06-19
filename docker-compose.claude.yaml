@@ -1,4 +1,4 @@
-# ddev-generated
+#ddev-generated
 # Service dedie "claude" : conteneur outil sans routage HTTP.
 # - L'image embarque un utilisateur dont l'UID/GID = celui de l'hote, injecte
 #   au build via les args USER_UID/USER_GID (DDEV expose DDEV_UID/DDEV_GID).
@@ -14,7 +14,7 @@ services:
     container_name: ddev-${DDEV_SITENAME}-claude
     build:
       context: claude
-      dockerfile: Dockerfile.claude
+      dockerfile: Dockerfile
       args:
         USERNAME: claude
         USER_UID: ${DDEV_UID:-1000}
@@ -23,11 +23,17 @@ services:
     restart: "no"
     environment:
       - HOME=/home/claude
+      # Centralise TOUTE la config Claude Code (dont .claude.json et
+      # .credentials.json) dans /home/claude/.claude, qui est le point de montage
+      # du volume persistant. Sans ca, .claude.json reste a la racine du home
+      # (couche ephemere) et l'auth est perdue au `ddev poweroff`.
+      - CLAUDE_CONFIG_DIR=/home/claude/.claude
       # Si .ddev/.env.claude definit ANTHROPIC_API_KEY, DDEV l'injecte ici
       # automatiquement (alternative a OAuth ; cf. README).
     volumes:
       # Code projet : meme bind-mount que le conteneur web.
       - "../:/var/www/html"
+      - ".:/mnt/ddev_config"
       # Persistance config/auth Claude Code, par projet.
       - "claude-config:/home/claude/.claude"
     labels:

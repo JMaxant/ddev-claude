@@ -19,8 +19,8 @@ Add-on DDEV qui fournit **Claude Code** dans un service Docker dédié, avec
 
 ```bash
 ddev add-on get your-org/ddev-claude
-ddev restart        # construit l'image et démarre le service
-ddev claude-init    # une fois : OAuth + hook RTK + install GSD
+ddev restart        # construit l'image, démarre le service, câble RTK
+ddev claude         # au 1er lancement : /login pour t'authentifier
 ```
 
 ## Usage quotidien
@@ -35,11 +35,15 @@ lancée depuis `web/modules/foo`, Claude démarre au bon endroit.
 
 ## Authentification
 
-`ddev claude-init` lance le flux OAuth : une URL s'affiche, tu l'ouvres dans ton
-navigateur, tu t'authentifies, tu recolles le code. Le credential est écrit dans
+Au premier `ddev claude`, la TUI Claude Code s'ouvre : tape `/login` et suis le
+flux OAuth (une URL à ouvrir dans ton navigateur). Le credential est écrit dans
 `~/.claude/.credentials.json` (mode 0600) **dans le volume**, donc persistant.
 Le refresh token gère ensuite le renouvellement : pas besoin de se reconnecter
 à chaque redémarrage.
+
+> `CLAUDE_CONFIG_DIR` est pointé sur `~/.claude` (le volume), donc **toute** la
+> config — credential, `.claude.json`, sessions, MCP globaux — y est centralisée
+> et persiste à travers `ddev poweroff`, `restart` et reboots.
 
 > Universel Linux/macOS/Windows : comme l'auth se fait *dans le conteneur*, le
 > stockage des credentials de ta machine hôte (Keychain macOS, Credential Manager
@@ -70,11 +74,37 @@ Deux niveaux, qui tombent naturellement avec l'architecture :
 - **Perso (privé à chaque dev)** — vivent dans `~/.claude` (le volume) :
   `~/.claude/agents/`, `~/.claude/skills/`. Non versionnés, propres à chacun.
 
+## Permissions de Claude Code
+
+L'add-on ne fige **aucune** politique de permissions : Claude Code reste sur son
+défaut natif (`default`, qui demande confirmation avant chaque action). Tu règles
+le mode où tu veux, modifiable à chaud sans rebuild :
+
+- **Perso (par dev, non versionné)** — `~/.claude/settings.json` dans le conteneur
+  (persisté dans le volume). Pour le modifier :
+  ```bash
+  ddev exec -s claude sh -c 'cat > ~/.claude/settings.json' <<'JSON'
+  { "permissions": { "defaultMode": "acceptEdits" } }
+  JSON
+  ```
+- **Partagé (par projet, versionné)** — `.claude/settings.json` à la racine du repo.
+  Tout le monde hérite du même réglage ; visible via le bind-mount du code.
+
+Modes disponibles : `default` (demande tout, défaut natif), `acceptEdits`
+(auto-approuve les éditions de fichiers, demande pour le shell), `auto`
+(classifieur), `bypassPermissions` (aucune invite).
+
+> ⚠️ Attention à `bypassPermissions` : le conteneur monte ton vrai code
+> (`/var/www/html`, avec le `.git`). L'isolation Docker ne protège pas le code
+> monté — en mode bypass, l'agent peut modifier/supprimer des fichiers et lancer
+> des commandes git sans confirmation. `acceptEdits` est un compromis plus sûr.
+
 ## RTK (Rust Token Killer)
 
-`ddev claude-init` exécute `rtk init -g`, qui installe un hook dans la config
-Claude Code du conteneur (persisté dans le volume). RTK compresse alors
-automatiquement les sorties des commandes Bash de l'agent. Vérifier les gains :
+RTK est câblé **automatiquement** à chaque `ddev start` : un hook DDEV `post-start`
+lance `rtk init -g` (mode non-interactif) dans le conteneur, de façon idempotente.
+RTK compresse alors les sorties des commandes Bash de l'agent. Aucune action
+manuelle. Vérifier les gains :
 
 ```bash
 ddev exec -s claude rtk gain
@@ -82,13 +112,14 @@ ddev exec -s claude rtk gain
 
 > ⚠️ Le binaire est installé depuis `rtk-ai/rtk` (le bon projet). On évite
 > volontairement `cargo install rtk` à cause d'une collision de nom sur crates.io.
+>
+> Le câblage contourne aussi un prompt de consentement télémétrie qui bloque en
+> mode non-interactif (cf. `claude/scripts/rtk-autoinit.sh`). La télémétrie est
+> désactivée.
 
 ## GSD (Git. Ship. Done.)
 
-Installé **par projet** via l'installateur officiel (`npx @opengsd/gsd-core@latest`),
-lancé par `ddev claude-init`. Choisis le runtime *Claude Code* et l'install *locale*.
-Les agents/commands GSD atterrissent dans le projet. Ensuite, dans Claude :
-`/gsd-new-project`, etc.
+WIP.
 
 ## Désinstallation
 
@@ -100,10 +131,10 @@ docker volume rm ddev-<projet>-claude-config
 
 ## Dépannage
 
-- **`ddev claude` dit "aucune authentification"** → lance `ddev claude-init`.
+- **`ddev claude` dit "pas encore authentifié"** → dans la TUI, tape `/login`.
 - **Service absent** → `ddev restart`, puis `ddev describe`.
-- **Windows** : l'interactivité de `docker exec -it` (collage du code OAuth) est
-  la plus fiable sous WSL2 ou Git Bash. En PowerShell natif, certains terminaux
-  gèrent mal le `-it` ; privilégie WSL2.
+- **Windows** : l'interactivité de `docker exec -it` (flux OAuth) est la plus
+  fiable sous WSL2 ou Git Bash. En PowerShell natif, certains terminaux gèrent
+  mal le `-it` ; privilégie WSL2.
 - **RTK entre en conflit avec un skill** → bypasse ponctuellement via `rtk proxy`
   ou ajoute la commande aux exceptions du hook.

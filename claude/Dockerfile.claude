@@ -1,7 +1,7 @@
-# ddev-generated
+#ddev-generated
 # Image outil pour Claude Code + RTK (Rust Token Killer).
 # GSD (git ship done) n'est PAS installe dans l'image : il s'installe par projet
-# via `npx @opengsd/gsd-core` (cf. `ddev claude-init`) ; on garde Node/npx pour ca.
+# via `npx @opengsd/gsd-core` (manuellement, cf. README) ; on garde Node/npx pour ca.
 #
 # Gestion du user : on cree dans l'image un utilisateur dont l'UID/GID correspond
 # a celui de l'hote, injecte AU BUILD via build args (DDEV expose DDEV_UID/DDEV_GID,
@@ -65,6 +65,7 @@ WORKDIR ${USER_HOME}
 
 # PATH : ~/.local/bin (ou atterrit l'installeur natif de Claude Code) puis npm-global.
 ENV HOME=${USER_HOME}
+ENV CLAUDE_CONFIG_DIR=${USER_HOME}/.claude
 ENV NPM_CONFIG_PREFIX=${USER_HOME}/.npm-global
 ENV PATH="${USER_HOME}/.local/bin:${USER_HOME}/.npm-global/bin:${PATH}"
 
