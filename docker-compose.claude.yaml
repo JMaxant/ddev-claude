@@ -12,7 +12,6 @@
 services:
   claude:
     container_name: ddev-${DDEV_SITENAME}-claude
-    image: ddev-${DDEV_SITENAME}-claude
     build:
       context: claude
       dockerfile: Dockerfile.claude
