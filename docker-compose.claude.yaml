@@ -1,0 +1,34 @@
+# ddev-generated
+# Service dédié "claude" : conteneur outil sans routage HTTP.
+# - Monte le code projet (même chemin que le conteneur web : /var/www/html).
+# - Persiste ~/.claude (auth OAuth, agents/skills perso, hook RTK) dans un
+#   volume nommé PAR PROJET. Le volume survit aux `ddev restart/stop`, et est
+#   nettoyé par DDEV au `ddev delete`.
+
+services:
+  claude:
+    container_name: ddev-${DDEV_SITENAME}-claude
+    image: ddev-${DDEV_SITENAME}-claude
+    build:
+      context: claude
+      dockerfile: Dockerfile
+    # Conteneur outil : reste vivant, on exec dedans à la demande.
+    command: ["tail", "-f", "/dev/null"]
+    # Aligne l'utilisateur du conteneur sur l'UID/GID hôte fournis par DDEV,
+    # pour que les fichiers écrits (credentials 0600, sorties RTK) restent lisibles.
+    user: "$DDEV_UID:$DDEV_GID"
+    environment:
+      - HOME=/home/claude
+      # Optionnel : si un .ddev/.env.claude définit ANTHROPIC_API_KEY, DDEV
+      # l'injecte automatiquement (voir README). OAuth reste la voie par défaut.
+    volumes:
+      # Persistance de la config/auth Claude Code, par projet.
+      - "claude-config:/home/claude/.claude"
+      # Labels DDEV obligatoires pour que le service soit géré comme partie du projet.
+    labels:
+      com.ddev.site-name: ${DDEV_SITENAME}
+      com.ddev.approot: $DDEV_APPROOT
+
+volumes:
+  claude-config:
+    name: "ddev-${DDEV_SITENAME}-claude-config"

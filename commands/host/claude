@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+## Description: Lance Claude Code dans le conteneur dédié (avec RTK + GSD du projet)
+## Usage: claude [flags...]
+## Example: "ddev claude" ou "ddev claude --help"
+## CanRunGlobally: false
+## HostWorkingDir: true
+
+#ddev-generated
+
+set -eu
+
+CONTAINER="ddev-${DDEV_SITENAME}-claude"
+
+# Vérifie que le service tourne.
+if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
+  echo "Le service 'claude' n'est pas démarré. Lance: ddev restart" >&2
+  exit 1
+fi
+
+# Reproduit le sous-répertoire courant à l'intérieur du conteneur, pour que
+# `ddev claude` lancé depuis web/modules/foo démarre Claude au bon endroit.
+REL="${PWD#"$DDEV_APPROOT"}"
+WORKDIR="/var/www/html${REL}"
+
+# Premier lancement non authentifié ? On guide vers claude-init.
+if ! docker exec "$CONTAINER" test -f /home/claude/.claude/.credentials.json 2>/dev/null; then
+  echo "ℹ️  Aucune authentification détectée." >&2
+  echo "    Lance d'abord:  ddev claude-init" >&2
+  echo "" >&2
+fi
+
+exec docker exec -it -w "$WORKDIR" "$CONTAINER" claude "$@"

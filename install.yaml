@@ -1,0 +1,32 @@
+name: claude
+
+# Service additionnel + commandes : nécessite une version DDEV récente.
+ddev_version_constraint: '>= v1.24.0'
+
+project_files:
+  - docker-compose.claude.yaml
+  - claude/Dockerfile
+  - commands/host/claude
+  - commands/host/claude-init
+
+# Pas de global_files : tout est par projet (service, volume, commandes).
+
+post_install_actions:
+  - |
+    #ddev-description: Rendre les commandes host exécutables
+    chmod +x commands/host/claude commands/host/claude-init
+  - |
+    #ddev-description: Message de prise en main
+    echo ""
+    echo "✅ Add-on 'claude' installé."
+    echo "   1) ddev restart        # construit l'image et démarre le service"
+    echo "   2) ddev claude-init    # OAuth + hook RTK + install GSD (une fois)"
+    echo "   3) ddev claude         # au quotidien"
+    echo ""
+
+removal_actions:
+  - |
+    #ddev-description: Rappel sur le volume de config Claude
+    echo "Le volume 'ddev-${DDEV_SITENAME}-claude-config' (auth + config) n'est pas"
+    echo "supprimé automatiquement. Pour le retirer :"
+    echo "  docker volume rm ddev-${DDEV_SITENAME}-claude-config"
