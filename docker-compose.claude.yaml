@@ -1,13 +1,11 @@
 #ddev-generated
 # Service dedie "claude" : conteneur outil sans routage HTTP.
-# - L'image embarque un utilisateur dont l'UID/GID = celui de l'hote, injecte
-#   au build via les args USER_UID/USER_GID (DDEV expose DDEV_UID/DDEV_GID).
-#   Pas besoin de `user:` ni de `group_add` au runtime : l'utilisateur est deja
-#   le bon par construction.
-# - Monte le code projet (meme chemin que le conteneur web : /var/www/html).
-#   NB : un service custom ne recoit PAS ce mount automatiquement -> declare ici.
-# - Persiste ~/.claude (auth OAuth, hook RTK, settings perso) dans un volume
-#   nomme PAR PROJET (survit aux restart/stop ; nettoye au `ddev delete`).
+#
+# Auth OAuth : les credentials de l'hote (~/.claude/) sont copies dans
+# ~/.ddev/claude/ par le hook pre-start, puis montes en tant que
+# repertoire. Le mount repertoire (vs fichier individuel) est necessaire
+# pour que les ecritures atomiques de Claude Code (rename) fonctionnent.
+# CLAUDE_CONFIG_DIR pointe sur ce repertoire -> coherence des chemins.
 
 services:
   claude:
@@ -19,27 +17,16 @@ services:
         USERNAME: claude
         USER_UID: ${DDEV_UID:-1000}
         USER_GID: ${DDEV_GID:-1000}
-    command: ["tail", "-f", "/dev/null"]
     restart: "no"
     environment:
       - HOME=/home/claude
-      # Centralise TOUTE la config Claude Code (dont .claude.json et
-      # .credentials.json) dans /home/claude/.claude, qui est le point de montage
-      # du volume persistant. Sans ca, .claude.json reste a la racine du home
-      # (couche ephemere) et l'auth est perdue au `ddev poweroff`.
       - CLAUDE_CONFIG_DIR=/home/claude/.claude
-      # Si .ddev/.env.claude definit ANTHROPIC_API_KEY, DDEV l'injecte ici
-      # automatiquement (alternative a OAuth ; cf. README).
     volumes:
-      # Code projet : meme bind-mount que le conteneur web.
       - "../:/var/www/html"
       - ".:/mnt/ddev_config"
-      # Persistance config/auth Claude Code, par projet.
-      - "claude-config:/home/claude/.claude"
+      # Config Claude Code : repertoire partage entre tous les projets DDEV.
+      # Seede depuis ~/.claude de l'hote par le hook pre-start.
+      - "${HOME}/.ddev/claude:/home/claude/.claude"
     labels:
       com.ddev.site-name: ${DDEV_SITENAME}
       com.ddev.approot: $DDEV_APPROOT
-
-volumes:
-  claude-config:
-    name: "ddev-${DDEV_SITENAME}-claude-config"

@@ -1,33 +1,36 @@
 name: claude
 
-# Service additionnel + commandes : nécessite une version DDEV récente.
 ddev_version_constraint: '>= v1.24.0'
 
 project_files:
   - docker-compose.claude.yaml
   - config.claude.yaml
   - claude/Dockerfile.claude
-  - claude/scripts/rtk-init.sh
+  - claude/scripts/entrypoint.sh
   - commands/claude/claude
   - commands/claude/claude-figma
 
-# Pas de global_files : tout est par projet (service, volume, commandes).
-
 post_install_actions:
   - |
-    #ddev-description: Rendre les commandes exécutables
-    chmod +x commands/claude/claude commands/claude/claude-figma
+    #ddev-description: Rendre les commandes et l'entrypoint executables
+    chmod +x commands/claude/claude commands/claude/claude-figma claude/scripts/entrypoint.sh
+  - |
+    #ddev-description: Creer le repertoire de config partagee si absent
+    mkdir -p ~/.ddev/claude
+    touch ~/.ddev/claude/.credentials.json
+    [ -s ~/.ddev/claude/.claude.json ] || printf '{}' > ~/.ddev/claude/.claude.json
   - |
     #ddev-description: Message de prise en main
     echo ""
-    echo "✅ Add-on 'claude' installé."
-    echo "   1) ddev restart   # construit l'image, démarre le service, câble RTK"
-    echo "   2) ddev claude    # au 1er lancement : /login pour t'authentifier (OAuth)"
+    echo "Add-on 'claude' installe."
+    echo "  1) ddev restart   # construit l'image et demarre le service"
+    echo "  2) ddev claude    # au 1er lancement : /login pour t'authentifier"
+    echo "  Config partagee : ~/.ddev/claude/ (une seule auth pour tous les projets)"
     echo ""
 
 removal_actions:
   - |
-    #ddev-description: Rappel sur le volume de config Claude
-    echo "Le volume 'ddev-${DDEV_SITENAME}-claude-config' (auth + config) n'est pas"
-    echo "supprimé automatiquement. Pour le retirer :"
-    echo "  docker volume rm ddev-${DDEV_SITENAME}-claude-config"
+    #ddev-description: Info sur la config partagee
+    echo "La config partagee ~/.ddev/claude/ (credentials OAuth) n'est pas"
+    echo "supprimee automatiquement. Pour la retirer :"
+    echo "  rm -rf ~/.ddev/claude/"
