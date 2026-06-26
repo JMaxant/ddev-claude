@@ -6,4 +6,7 @@
 
 #ddev-generated
 
-exec claude "$@"
+# --dangerously-skip-permissions : adapte au container isole (pas de risque).
+# Bypass aussi la re-verification TUI du token OAuth (claude.ai bloque les IPs
+# Docker via Cloudflare, mais l'auth API fonctionne -- cf. `claude auth status`).
+exec claude --dangerously-skip-permissions "$@"

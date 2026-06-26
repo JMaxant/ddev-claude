@@ -1,16 +1,15 @@
 #ddev-generated
 # Image outil pour Claude Code + RTK (Rust Token Killer).
-# GSD (git ship done) n'est PAS installe dans l'image : il s'installe par projet
-# via `npx @opengsd/gsd-core` (manuellement, cf. README) ; on garde Node/npx pour ca.
+# Base debian:bookworm-slim (glibc) : Claude Code et RTK sont des binaires glibc,
+# incompatibles musl/alpine. Node.js non necessaire -- le script d'install Claude
+# Code embarque son propre runtime.
 #
 # Gestion du user : on cree dans l'image un utilisateur dont l'UID/GID correspond
 # a celui de l'hote, injecte AU BUILD via build args (DDEV expose DDEV_UID/DDEV_GID,
-# relayes par le compose). On desamorce la collision d'UID/GID : l'image de base a
-# deja un user en 1000 (l'utilisateur `node`), donc si l'UID/GID cible est occupe
-# par quelqu'un d'autre, on le supprime avant de creer le notre. Resultat : un vrai
-# utilisateur nomme, avec home dans /etc/passwd et shell -> session interactive propre.
+# relayes par le compose). On desamorce la collision d'UID/GID : si l'UID/GID cible
+# est occupe, on supprime l'existant avant de creer le notre.
 
-FROM node:24-bookworm-slim
+FROM debian:bookworm-slim
 
 ARG USERNAME=claude
 ARG USER_UID=1000
@@ -28,6 +27,7 @@ RUN apt-get update \
        ripgrep \
        less \
        sudo \
+       jq \
   && rm -rf /var/lib/apt/lists/*
 
 # RTK (Rust Token Killer) -- binaire pre-compile via le script d'install officiel.
@@ -56,6 +56,10 @@ RUN existing_user=$(getent passwd ${USER_UID} | cut -d: -f1) \
   && chmod 0440 /etc/sudoers.d/${USERNAME} \
   && passwd -d ${USERNAME} 2>/dev/null || true
 
+# Entrypoint : copie avant le switch user (root -> readable par tous).
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Repertoires utiles, possedes par l'utilisateur.
 RUN mkdir -p ${USER_HOME}/.claude ${USER_HOME}/.local/bin ${USER_HOME}/.npm-global /var/www/html \
   && chown -R ${USER_UID}:${USER_GID} ${USER_HOME} /var/www/html
@@ -64,6 +68,9 @@ USER ${USERNAME}
 WORKDIR ${USER_HOME}
 
 # PATH : ~/.local/bin (ou atterrit l'installeur natif de Claude Code) puis npm-global.
+# CLAUDE_CONFIG_DIR volontairement absent : Claude Code utilise ses chemins par defaut,
+# ce qui place .claude.json a la racine du home (~/.claude.json) — coherent avec le
+# bind-mount du compose.
 ENV HOME=${USER_HOME}
 ENV CLAUDE_CONFIG_DIR=${USER_HOME}/.claude
 ENV NPM_CONFIG_PREFIX=${USER_HOME}/.npm-global
@@ -77,5 +84,5 @@ RUN curl -fsSL https://claude.ai/install.sh | bash \
 # Le code projet est monte ici par DDEV (declare dans le compose).
 WORKDIR /var/www/html
 
-# Conteneur outil : reste vivant, on exec dedans a la demande.
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["tail", "-f", "/dev/null"]

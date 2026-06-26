@@ -1,7 +1,10 @@
 #!/usr/bin/env bats
 
 # Tests de l'add-on ddev-claude.
-# Lancer (hors release) :   bats ./tests/test.bats --filter-tags '!release'
+# Lancer (hors release) :   bats ./test.bats --filter-tags '!release'
+
+load tests/test_helper/bats-support/load.bash
+load tests/test_helper/bats-assert/load.bash
 
 setup() {
   set -eu -o pipefail
@@ -21,7 +24,7 @@ setup() {
 
   # Chemin du dépôt de l'add-on (répertoire courant des sources).
   export DIR
-  DIR="$(cd "$(dirname "${BATS_TEST_FILENAME}")/.." && pwd)"
+  DIR="$(cd "$(dirname "${BATS_TEST_FILENAME}")" && pwd)"
 }
 
 teardown() {
