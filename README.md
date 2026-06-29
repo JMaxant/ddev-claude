@@ -41,7 +41,7 @@ claude login                 # authentification OAuth
 ## Installation
 
 ```bash
-ddev add-on get your-org/ddev-claude
+ddev add-on get https://github.com/JMaxant/ddev-claude
 ddev restart        # construit l'image et démarre le service
 ddev claude         # Claude Code dans le projet
 ```
