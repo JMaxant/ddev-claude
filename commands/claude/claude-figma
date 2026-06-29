@@ -34,7 +34,7 @@ else
           "source": { "source": "github", "repo": "anthropics/claude-plugins-official" }
         }
       })
-  ' "$SETTINGS" > "$tmp" && mv "$tmp" "$SETTINGS"
+  ' "$SETTINGS" > "$tmp" && cp "$tmp" "$SETTINGS" && rm -f "$tmp"
   echo "✓ Plugin Figma activé dans $SETTINGS"
 fi
 

@@ -23,7 +23,6 @@ services:
       - CLAUDE_CONFIG_DIR=/home/claude/.claude
     volumes:
       - "../:/var/www/html"
-      - ".:/mnt/ddev_config"
       # Config Claude Code : repertoire partage entre tous les projets DDEV.
       # Seede depuis ~/.claude de l'hote par le hook pre-start.
       - "${HOME}/.ddev/claude:/home/claude/.claude"

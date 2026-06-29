@@ -24,6 +24,7 @@ Add-on DDEV qui fournit **Claude Code** dans un service Docker dédié, avec
 | [Claude Code](https://claude.ai/code) sur l'hôte | Auth partagée (credentials copiés depuis l'hôte) | `claude --version` |
 | `jq` sur l'hôte | Extraction des champs auth depuis `~/.claude.json` dans le hook `pre-start` | `jq --version` |
 | Compte Claude authentifié sur l'hôte | Source des credentials | `claude auth status` |
+| [ddev-ai-ssh](https://github.com/trebormc/ddev-ai-ssh) | SSH dans le container web pour déléguer drush/composer/php | installé automatiquement |
 
 **Installer les dépendances manquantes :**
 
@@ -119,6 +120,33 @@ Claude Code si besoin :
 
 - **Partagé (versionné)** — `.claude/settings.json` à la racine du repo
 - **Perso** — `.ddev/claude/settings.json`
+
+## Commandes PHP, Drush, Composer
+
+Le container Claude n'embarque pas PHP. À la place, les commandes sont déléguées
+via SSH au container web DDEV — qui a déjà le bon PHP, Drush et Composer.
+
+Cette délégation est transparente : depuis `ddev claude`, tape directement :
+
+```bash
+drush status
+drush cr
+composer install
+php -r "echo PHP_VERSION;"
+phpunit
+phpstan analyse
+web-exec wp cli info   # commande arbitraire sur le container web
+web-shell              # shell interactif sur le container web
+```
+
+Ces fonctions sont injectées dans `.bashrc` au démarrage du container via l'entrypoint.
+
+### ddev-ai-ssh
+
+La délégation SSH repose sur [ddev-ai-ssh](https://github.com/trebormc/ddev-ai-ssh)
+(de trebormc), déclaré comme dépendance de l'addon et **installé automatiquement**
+avec `ddev add-on get`. Il installe un sshd dans le container web et génère des clés
+ed25519 par projet dans `.ddev/.agent-ssh-keys/` (jamais commités, ignorés par git).
 
 ## RTK (Rust Token Killer)
 

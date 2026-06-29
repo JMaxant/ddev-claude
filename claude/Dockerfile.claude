@@ -24,6 +24,7 @@ RUN apt-get update \
        git \
        curl \
        ca-certificates \
+       openssh-client \
        ripgrep \
        less \
        sudo \
@@ -56,25 +57,33 @@ RUN existing_user=$(getent passwd ${USER_UID} | cut -d: -f1) \
   && chmod 0440 /etc/sudoers.d/${USERNAME} \
   && passwd -d ${USERNAME} 2>/dev/null || true
 
-# Entrypoint : copie avant le switch user (root -> readable par tous).
+# Entrypoint + SSH config : copies avant le switch user.
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN printf '%s\n' \
+  'Host web' \
+  '    HostName web' \
+  '    IdentityFile ~/.ssh/ddev_agent_key' \
+  '    StrictHostKeyChecking no' \
+  '    UserKnownHostsFile /dev/null' \
+  '    ServerAliveInterval 30' \
+  '    ServerAliveCountMax 3' \
+  '    RequestTTY no' \
+  > /tmp/ssh-config
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Repertoires utiles, possedes par l'utilisateur.
-RUN mkdir -p ${USER_HOME}/.claude ${USER_HOME}/.local/bin ${USER_HOME}/.npm-global /var/www/html \
+RUN mkdir -p ${USER_HOME}/.claude ${USER_HOME}/.local/bin /var/www/html \
   && chown -R ${USER_UID}:${USER_GID} ${USER_HOME} /var/www/html
 
 USER ${USERNAME}
 WORKDIR ${USER_HOME}
 
-# PATH : ~/.local/bin (ou atterrit l'installeur natif de Claude Code) puis npm-global.
-# CLAUDE_CONFIG_DIR volontairement absent : Claude Code utilise ses chemins par defaut,
-# ce qui place .claude.json a la racine du home (~/.claude.json) — coherent avec le
-# bind-mount du compose.
+# CLAUDE_CONFIG_DIR : centralise la config Claude Code dans ~/.claude (bind-monte
+# depuis ~/.ddev/claude/ de l'hote par docker-compose).
+# PATH : ~/.local/bin est le repertoire cible de l'installeur natif Claude Code.
 ENV HOME=${USER_HOME}
 ENV CLAUDE_CONFIG_DIR=${USER_HOME}/.claude
-ENV NPM_CONFIG_PREFIX=${USER_HOME}/.npm-global
-ENV PATH="${USER_HOME}/.local/bin:${USER_HOME}/.npm-global/bin:${PATH}"
+ENV PATH="${USER_HOME}/.local/bin:${PATH}"
 
 # Claude Code via l'installeur natif officiel (recommande par Anthropic),
 # plutot que `npm install -g`. Atterrit dans ~/.local/bin.
