@@ -13,11 +13,12 @@ project_files:
   - claude/CLAUDE.md
   - commands/claude/claude
   - commands/claude/claude-figma
+  - commands/claude/rtk
 
 post_install_actions:
   - |
     #ddev-description: Rendre les commandes et l'entrypoint executables
-    chmod +x commands/claude/claude commands/claude/claude-figma claude/scripts/entrypoint.sh
+    chmod +x commands/claude/claude commands/claude/claude-figma commands/claude/rtk claude/scripts/entrypoint.sh
   - |
     #ddev-description: Creer le repertoire de config partagee si absent
     mkdir -p ~/.ddev/claude
@@ -28,14 +29,17 @@ post_install_actions:
     #ddev-description: Message de prise en main
     echo ""
     echo "Add-on 'claude' installe."
-    echo "  1) ddev restart   # construit l'image et demarre le service"
-    echo "  2) ddev claude    # au 1er lancement : /login pour t'authentifier"
-    echo "  Config partagee : ~/.ddev/claude/ (une seule auth pour tous les projets)"
+    echo "  1) claude auth status          # verifier l'auth sur l'hote"
+    echo "     claude login                # si non authentifie"
+    echo "  2) ddev restart                # construit l'image et demarre le service"
+    echo "  3) ddev claude                 # Claude Code dans le projet"
+    echo ""
+    echo "  Auth partagee entre tous les projets DDEV via ~/.ddev/claude/"
     echo ""
 
 removal_actions:
   - |
     #ddev-description: Info sur la config partagee
     echo "La config partagee ~/.ddev/claude/ (credentials OAuth) n'est pas"
-    echo "supprimee automatiquement. Pour la retirer :"
+    echo "supprimee automatiquement. Pour la retirer (désinstallation complète de l'addon et de claude code):"
     echo "  rm -rf ~/.ddev/claude/"

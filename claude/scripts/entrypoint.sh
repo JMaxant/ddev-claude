@@ -44,27 +44,4 @@ if [ -f "${KEY_SRC}" ]; then
   sed -i "/^Host web$/a\\    User ${WEB_USER}" "${SSH_DIR}/config"
 fi
 
-# --- 4. Wrappers bash pour delegation vers container web ---
-# Injecte une seule fois (idempotent) dans .bashrc.
-BASHRC="${HOME}/.bashrc"
-if ! grep -q 'ssh-cmd()' "${BASHRC}" 2>/dev/null; then
-  cat >> "${BASHRC}" << 'BASHRC_EOF'
-
-# Delegation SSH vers le container web DDEV (drush, composer, php, etc.)
-ssh-cmd() {
-  local host="$1"; shift
-  local cmd=""
-  for arg in "$@"; do cmd="${cmd:+$cmd }$(printf "%q" "$arg")"; done
-  ssh "$host" "$cmd"
-}
-drush()    { ssh-cmd web ./vendor/bin/drush "$@"; }
-composer() { ssh-cmd web composer "$@"; }
-phpunit()  { ssh-cmd web ./vendor/bin/phpunit "$@"; }
-phpstan()  { ssh-cmd web ./vendor/bin/phpstan "$@"; }
-php()      { ssh-cmd web php "$@"; }
-web-exec() { ssh-cmd web "$@"; }
-web-shell(){ ssh -t web bash; }
-BASHRC_EOF
-fi
-
 exec "$@"

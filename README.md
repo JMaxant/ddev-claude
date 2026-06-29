@@ -126,20 +126,16 @@ Claude Code si besoin :
 Le container Claude n'embarque pas PHP. À la place, les commandes sont déléguées
 via SSH au container web DDEV — qui a déjà le bon PHP, Drush et Composer.
 
-Cette délégation est transparente : depuis `ddev claude`, tape directement :
+Depuis `ddev claude`, utilise `ssh web` directement :
 
 ```bash
-drush status
-drush cr
-composer install
-php -r "echo PHP_VERSION;"
-phpunit
-phpstan analyse
-web-exec wp cli info   # commande arbitraire sur le container web
-web-shell              # shell interactif sur le container web
+ssh web ./vendor/bin/drush status
+ssh web ./vendor/bin/drush cr
+ssh web composer install
+ssh web php -r "echo PHP_VERSION;"
+ssh web npm run build
+ssh -t web bash          # shell interactif sur le container web
 ```
-
-Ces fonctions sont injectées dans `.bashrc` au démarrage du container via l'entrypoint.
 
 ### ddev-ai-ssh
 
@@ -154,11 +150,10 @@ RTK est câblé **automatiquement** à chaque démarrage via `entrypoint.sh`.
 RTK compresse les sorties des commandes Bash de l'agent. Aucune action manuelle.
 
 ```bash
-ddev exec -s claude rtk gain    # voir les économies de tokens
+ddev rtk gain             # voir les économies de tokens
+ddev rtk gain --history   # historique des commandes
+ddev rtk discover         # opportunités manquées dans l'historique Claude Code
 ```
-
-> ⚠️ Binaire installé depuis `rtk-ai/rtk`. On évite `cargo install rtk` (collision
-> de nom avec "Rust Type Kit" sur crates.io).
 
 ## Exclure des fichiers du contexte Claude
 

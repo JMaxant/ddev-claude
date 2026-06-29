@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+## Description: Affiche les économies de tokens RTK dans le container Claude
+## Usage: rtk [gain|gain --history|discover|...]
+## Example: "ddev rtk gain"
+
+#ddev-generated
+
+exec rtk "$@"
