@@ -26,6 +26,11 @@ services:
       # Config Claude Code : repertoire partage entre tous les projets DDEV.
       # Seede depuis ~/.claude de l'hote par le hook pre-start.
       - "${HOME}/.ddev/claude:/home/claude/.claude"
+      # Necessaire pour que DDEV puisse injecter les scripts commands/ dans ce
+      # service custom (les conteneurs natifs l'ont automatiquement, pas les custom).
+      - "$DDEV_APPROOT/.ddev:/mnt/ddev_config:ro"
+      # CA mkcert partagee entre tous les projets DDEV (requis pour les services custom).
+      - "ddev-global-cache:/mnt/ddev-global-cache"
     labels:
       com.ddev.site-name: ${DDEV_SITENAME}
       com.ddev.approot: $DDEV_APPROOT
