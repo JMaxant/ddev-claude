@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#ddev-generated
 # Synchronise la config Claude Code de l'hote vers ~/.ddev/claude/ (CLAUDE_CONFIG_DIR
 # du container). Execute par le hook pre-start de config.claude.yaml.
 set -euo pipefail
@@ -15,6 +16,9 @@ cp "$SRC/.credentials.json" "$DEST/.credentials.json" 2>/dev/null \
 # --- Etat utilisateur (champs auth/onboarding uniquement) ---
 # On exclut les projets, les cles GrowthBook et autres caches specifiques a l'hote.
 # hasCompletedOnboarding est le champ cle qui empeche le wizard de s'afficher.
+# mcpServers (scope "user") est inclus : contrairement au scope "local"/"project",
+# il n'est pas indexe par chemin de projet, donc il reste valide malgre le
+# chemin different du container (/var/www/html).
 if [ -f ~/.claude.json ]; then
   jq '{
     oauthAccount,
@@ -30,7 +34,8 @@ if [ -f ~/.claude.json ]; then
     installMethod,
     changelogLastFetched,
     lastReleaseNotesSeen,
-    autoUpdates
+    autoUpdates,
+    mcpServers
   } | with_entries(select(.value != null))' \
     ~/.claude.json > "$DEST/.claude.json" 2>/dev/null \
   || printf '{}' > "$DEST/.claude.json"
