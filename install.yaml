@@ -10,6 +10,7 @@ project_files:
   - config.claude.yaml
   - claude/Dockerfile.claude
   - claude/scripts/entrypoint.sh
+  - claude/scripts/sync-host-config.sh
   - claude/CLAUDE.md
   - commands/claude/claude
   - commands/claude/claude-figma
@@ -18,7 +19,7 @@ project_files:
 post_install_actions:
   - |
     #ddev-description: Rendre les commandes et l'entrypoint executables
-    chmod +x commands/claude/claude commands/claude/claude-figma commands/claude/rtk claude/scripts/entrypoint.sh
+    chmod +x commands/claude/claude commands/claude/claude-figma commands/claude/rtk claude/scripts/entrypoint.sh claude/scripts/sync-host-config.sh
   - |
     #ddev-description: Creer le repertoire de config partagee si absent
     mkdir -p ~/.ddev/claude

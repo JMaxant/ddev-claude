@@ -1,34 +1,4 @@
 #ddev-generated
 hooks:
   pre-start:
-    - exec-host: |
-        mkdir -p ~/.ddev/claude
-        # Credentials : toujours copier depuis ~/.claude/ (tokens OAuth frais).
-        cp ~/.claude/.credentials.json ~/.ddev/claude/.credentials.json 2>/dev/null \
-          || touch ~/.ddev/claude/.credentials.json
-        # Etat utilisateur : extraire uniquement les champs auth/onboarding depuis
-        # ~/.claude.json (racine home, fichier canonique). On evite les 17 projets,
-        # les 353 cles GrowthBook et autres caches specifiques a l'hote.
-        # hasCompletedOnboarding est le champ cle qui empeche le wizard de s'afficher.
-        if [ -f ~/.claude.json ]; then
-          jq '{
-            oauthAccount,
-            hasCompletedOnboarding,
-            lastOnboardingVersion,
-            migrationVersion,
-            userID,
-            machineID,
-            opusProMigrationComplete,
-            sonnet1m45MigrationComplete,
-            sonnet45MigrationComplete,
-            seenNotifications,
-            installMethod,
-            changelogLastFetched,
-            lastReleaseNotesSeen,
-            autoUpdates
-          } | with_entries(select(.value != null))' \
-            ~/.claude.json > ~/.ddev/claude/.claude.json 2>/dev/null \
-          || printf '{}' > ~/.ddev/claude/.claude.json
-        else
-          printf '{}' > ~/.ddev/claude/.claude.json
-        fi
+    - exec-host: bash .ddev/claude/scripts/sync-host-config.sh
